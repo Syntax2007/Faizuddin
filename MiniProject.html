@@ -1,0 +1,342 @@
+from flask import Flask, render_template_string
+
+app = Flask(__name__)
+
+page = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Hub 🎮</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            margin: 30px 0 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+        }
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s, background 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        button:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        #game-area {
+            margin-top: 30px;
+            font-size: 18px;
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        /* Tic Tac Toe */
+        .tic-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .tic-cell {
+            width: 100px; height: 100px;
+            background: #333;
+            color: #fff;
+            font-size: 2em;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        .tic-cell:hover { background: #555; }
+
+        /* Memory Game */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 90px);
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .memory-card {
+            width: 90px; height: 90px;
+            background: #444; color: transparent;
+            font-size: 2em;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s, background 0.3s;
+        }
+        .memory-card:hover { transform: scale(1.05); }
+        .memory-card.flipped {
+            background: #4CAF50; color: #fff;
+        }
+
+        /* Inputs */
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            border-radius: 6px;
+            border: none;
+            margin: 8px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Game Hub 🎮</h1>
+    <p>Choose a game and have fun!</p>
+    <div class="game-container">
+        <button onclick="playGuess()">Guess the Number</button>
+        <button onclick="playClicker()">Clicker Game</button>
+        <button onclick="playTicTacToe()">Tic Tac Toe</button>
+        <button onclick="playMemory()">Memory Game</button>
+        <button onclick="playQuiz()">Quiz Game</button>
+    </div>
+    <div id="game-area"></div>
+
+    <script>
+        // --- Keep all your existing game JS exactly as before ---
+        // Guess the Number
+        function playGuess() {
+            let number = Math.floor(Math.random() * 100) + 1;
+            let attempts = 0;
+            let area = document.getElementById("game-area");
+
+            area.innerHTML = "<p>Guess a number between 1 and 100:</p>" +
+                             "<input id='guessInput' type='number' min='1' max='100'>" +
+                             "<button id='guessBtn'>Submit</button>" +
+                             "<p id='guessRes'></p>";
+
+            let btn = document.getElementById("guessBtn");
+            let input = document.getElementById("guessInput");
+            let res = document.getElementById("guessRes");
+
+            btn.onclick = () => {
+                let guess = Number(input.value.trim());
+                if (isNaN(guess) || guess < 1 || guess > 100) {
+                    res.innerText = "⚠️ Please enter a valid number between 1 and 100.";
+                    return;
+                }
+                attempts++;
+                if (guess === number) {
+                    res.innerText = "🎉 Correct! The number was " + number +
+                                    ". You guessed it in " + attempts + " tries.";
+                    btn.disabled = true;
+                    input.disabled = true;
+                } else if (guess < number) {
+                    res.innerText = "Too low! Try again.";
+                } else {
+                    res.innerText = "Too high! Try again.";
+                }
+            };
+        }
+
+        // Clicker Game
+        function playClicker() {
+            let score = 0;
+            let timeLeft = 10;
+            let area = document.getElementById("game-area");
+
+            area.innerHTML = "<p>Click the button as fast as you can!</p>" +
+                             "<button id='clickBtn'>Click Me!</button>" +
+                             "<p id='score'>Score: 0</p>" +
+                             "<p id='timer'>Time left: " + timeLeft + "s</p>";
+
+            let btn = document.getElementById("clickBtn");
+            let scoreEl = document.getElementById("score");
+            let timerEl = document.getElementById("timer");
+
+            btn.onclick = function() {
+                score++;
+                scoreEl.innerText = "Score: " + score;
+            };
+
+            let countdown = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = "Time left: " + timeLeft + "s";
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    btn.disabled = true;
+                    timerEl.innerText = "⏰ Time's up!";
+                    area.innerHTML += "<p>🎉 Final Score: " + score + "</p>";
+                }
+            }, 1000);
+        }
+
+        // Tic Tac Toe
+        function playTicTacToe() {
+            let area = document.getElementById("game-area");
+            area.innerHTML = "<div class='tic-grid' id='ticGrid'></div><p id='ticStatus'>Player X's turn</p>";
+            let grid = document.getElementById("ticGrid");
+            let board = Array(9).fill("");
+            let current = "X";
+
+            board.forEach((_, i) => {
+                let cell = document.createElement("div");
+                cell.className = "tic-cell";
+                cell.onclick = () => {
+                    if (!board[i]) {
+                        board[i] = current;
+                        cell.innerText = current;
+                        if (checkWin(board, current)) {
+                            document.getElementById("ticStatus").innerText = "🎉 Player " + current + " wins!";
+                            grid.querySelectorAll(".tic-cell").forEach(c => c.onclick = null);
+                        } else {
+                            current = current === "X" ? "O" : "X";
+                            document.getElementById("ticStatus").innerText = "Player " + current + "'s turn";
+                        }
+                    }
+                };
+                grid.appendChild(cell);
+            });
+
+            function checkWin(b, p) {
+                const wins = [
+                    [0,1,2],[3,4,5],[6,7,8],
+                    [0,3,6],[1,4,7],[2,5,8],
+                    [0,4,8],[2,4,6]
+                ];
+                return wins.some(combo => combo.every(i => b[i] === p));
+            }
+        }
+
+        // Memory Game
+        function playMemory() {
+    let area = document.getElementById("game-area");
+    // Add more symbols for more pairs
+    let symbols = ["🍎","🍌","🍇","🍒","🍉","🍍","🥝","🍓",
+                   "🍎","🍌","🍇","🍒","🍉","🍍","🥝","🍓"];
+    symbols.sort(() => Math.random() - 0.5);
+
+    area.innerHTML = '<div class="memory-grid" id="memGrid"></div>';
+    let grid = document.getElementById("memGrid");
+    let flipped = [];
+    let matched = [];
+
+    symbols.forEach((sym, i) => {
+        let card = document.createElement("div");
+        card.className = "memory-card";
+        card.innerText = sym;
+        card.onclick = () => {
+            if (!card.classList.contains("flipped") && flipped.length < 2) {
+                card.classList.add("flipped");
+                flipped.push({index: i, symbol: sym, element: card});
+                if (flipped.length === 2) {
+                    if (flipped[0].symbol === flipped[1].symbol) {
+                        matched.push(flipped[0].index, flipped[1].index);
+                        flipped = [];
+                        if (matched.length === symbols.length) {
+                            alert("🎉 You matched all cards!");
+                        }
+                    } else {
+                        setTimeout(() => {
+                            flipped.forEach(f => f.element.classList.remove("flipped"));
+                            flipped = [];
+                        }, 1000);
+                    }
+                }
+            }
+        };
+        grid.appendChild(card);
+    });
+}
+
+        // Quiz Game
+        // Quiz Game
+function playQuiz() {
+    let area = document.getElementById("game-area");
+    let questions = [
+        {q: "Which language is used to style web pages?", a: "CSS"},
+        {q: "What does HTML stand for?", a: "HyperText Markup Language"},
+        {q: "Which keyword is used to define a function in Python?", a: "def"},
+        {q: "In JavaScript, what symbol is used for strict equality?", a: "==="},
+        {q: "Which data structure uses FIFO (First In First Out)?", a: "Queue"},
+        {q: "What is the output of: print(2**3) in Python?", a: "8"},
+        {q: "Which tag is used to insert JavaScript in HTML?", a: "<script>"},
+        {q: "What does SQL stand for?", a: "Structured Query Language"}
+    ];
+
+    let index = 0;
+    let score = 0;
+
+    area.innerHTML = '<p id="quizQ"></p>' +
+                     '<input id="quizAns" type="text">' +
+                     '<button id="quizBtn">Submit</button>' +
+                     '<p id="quizRes"></p>' +
+                     '<p id="quizScore"></p>';
+
+    let qEl = document.getElementById("quizQ");
+    let resEl = document.getElementById("quizRes");
+    let ansEl = document.getElementById("quizAns");
+    let btn = document.getElementById("quizBtn");
+    let scoreEl = document.getElementById("quizScore");
+
+    function loadQ() {
+        qEl.innerText = questions[index].q;
+        ansEl.value = "";
+        resEl.innerText = "";
+    }
+    loadQ();
+
+    btn.onclick = () => {
+        let userAns = ansEl.value.trim().toLowerCase();
+        let correctAns = questions[index].a.toLowerCase();
+
+        if (userAns === correctAns) {
+            resEl.innerText = "✅ Correct!";
+            score++;
+        } else {
+            resEl.innerText = "❌ Wrong! Answer: " + questions[index].a;
+        }
+
+        index++;
+        if (index < questions.length) {
+            setTimeout(loadQ, 1000);
+        } else {
+                resEl.innerText += " 🎉 Quiz finished!";
+                scoreEl.innerText = "Your score: " + score + "/" + questions.length;
+                btn.disabled = true;
+                ansEl.disabled = true;
+              }
+           };
+        }
+    </script>
+</body>
+</html>
+"""
+
+@app.route("/")
+def home():
+    return render_template_string(page)
+
+if __name__ == "__main__":
+    app.run(debug=True)
